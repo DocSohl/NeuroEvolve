@@ -67,6 +67,11 @@ class SimpleNet(object):
                 error = training_outputs[j] - output
                 self._output_layer.backPropogate(error)
 
+    def trainOnce(self, input, correct):
+        output = self.evaluateOnce(input)
+        error = correct - output
+        self._output_layer.backPropogate(error)
+
     def getWeights(self):
         """Get a Python list of numpy weight arrays"""
         return [layer.weights for layer in self._layers]
