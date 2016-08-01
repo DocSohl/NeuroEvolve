@@ -1,5 +1,5 @@
 from __future__ import division
-import math
+
 import numpy as np
 
 
@@ -65,12 +65,12 @@ class SimpleNet(object):
             for j,inputs in enumerate(training_inputs):
                 output = self.evaluateOnce(inputs)
                 error = training_outputs[j] - output
-                self._output_layer.backPropogate(error)
+                self._output_layer.backPropagate(error)
 
     def trainOnce(self, input, correct):
         output = self.evaluateOnce(input)
         error = correct - output
-        self._output_layer.backPropogate(error)
+        self._output_layer.backPropagate(error)
 
     def getWeights(self):
         """Get a Python list of numpy weight arrays"""
@@ -106,11 +106,13 @@ class SimpleLayer(object):
         self.inputs = new_inputs
         self.weights = 2 * np.random.random((self.inputs,self.size)) - 1
 
-    def _sigmoid(self, x):
+    @staticmethod
+    def _sigmoid(x):
         """Calculate the sigmoid function"""
         return 1 / (1 + np.exp(-x))
 
-    def _sigmoidDerivative(self, x):
+    @staticmethod
+    def _sigmoidDerivative(x):
         """Calculate the derivative of a sigmoid"""
         return x * (1 - x)
 
@@ -120,13 +122,13 @@ class SimpleLayer(object):
         self.last_output = self._sigmoid(np.dot(self.last_input,self.weights))
         return self.last_output
 
-    def backPropogate(self, error):
+    def backPropagate(self, error):
         """Use the last evaluation to adjust weights"""
         delta = error * self._sigmoidDerivative(self.last_output)
         error_above = delta.dot(self.weights.T)
         adjustment = self.last_input.T.dot(delta)
         self.weights += adjustment
-        self.above.backPropogate(error_above)
+        self.above.backPropagate(error_above)
 
 
 class InputLayer(SimpleLayer):
@@ -150,7 +152,7 @@ class InputLayer(SimpleLayer):
         """Get the set if inputs"""
         return self.values
 
-    def backPropogate(self, error):
+    def backPropagate(self, error):
         return
 
 
