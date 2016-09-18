@@ -27,9 +27,9 @@ class World(object):
         self._spawnFood()
         self._ageBloops()
         self._updateState()
-        self._reproduce()
         self._decide()
         self._integrate()
+        self._reproduce()
 
     def _ageBloops(self):
         to_delete = []
@@ -73,9 +73,16 @@ class World(object):
         del food
 
     def _reproduce(self):
-        reproduction_chance = 0.001
+        reproduction_chance = 0.005
         if random.random() < reproduction_chance:
             print "Reproduce"
+            width, height = self.screen.get_size()
+            if len(self.bloops) > 0:
+                parent = random.choice(self.bloops)
+                self.bloops.append(Bloop(self.screen,random.randint(0,width),random.randint(0,height),parentNet=parent.net))
+            else:
+                self.bloops.append(
+                    Bloop(self.screen, random.randint(0, width), random.randint(0, height)))
 
     def _decide(self):
         for bloop in self.bloops:
@@ -86,23 +93,31 @@ class World(object):
             bloop.integrate()
 
 class Bloop(object):
-    def __init__(self, screen, x, y):
+    def __init__(self, screen, x, y, parentNet=None):
         self.pos = np.array([x,y], dtype=np.float32)
         self.screen = screen
         self.closest = None
         self.closest_range = np.array([0,0])
         self.health = 100.0
         self.move = np.array([0,0])
+        self.net = SimpleNet()
+        self.net.addLayerSet(2, [4], 2)
+        if parentNet:
+            weights = parentNet.getWeights()
+            self.net.setWeights(weights)
+            self.net.mutateLayers(2)
 
     def draw(self):
         pygame.draw.circle(self.screen, (0, 255, 255), self.pos, self.radius, 0)
 
     def decide(self):
         mag = np.linalg.norm(self.closest_range)
-        if mag:
-            self.move = self.closest_range / mag
-        else:
-            self.move = np.array([0,0])
+        direction = self.closest_range / mag
+        # if mag:
+            # self.move = self.closest_range / mag
+        # else:
+        #     self.move = np.array([0,0])
+        self.move = 2 * self.net.evaluateOnce(direction)[0] - 1
 
     def integrate(self):
         self.pos += self.move * self.speed
@@ -147,5 +162,5 @@ if __name__=="__main__":
         world.update()
         world.draw()
         pygame.display.update()
-        # clock.tick(30)
+        clock.tick(30)
 

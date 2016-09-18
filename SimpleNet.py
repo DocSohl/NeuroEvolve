@@ -1,6 +1,7 @@
 from __future__ import division
 
 import numpy as np
+import random
 
 
 class SimpleNet(object):
@@ -81,7 +82,12 @@ class SimpleNet(object):
         if len(weights) != len(self._layers):
             raise IndexError("Expected array of weights of size %d but got %d" % (len(self._layers),len(weights)))
         for i,weight in enumerate(weights):
-            self._layers[i].weights = weights
+            self._layers[i].weights = weight
+
+    def mutateLayers(self, mutations):
+        for i in range(mutations):
+            layer = random.choice(self._layers)
+            layer.mutate()
 
     def __repr__(self):
         rep = "SimpleNet with:"
@@ -109,7 +115,7 @@ class SimpleLayer(object):
     @staticmethod
     def _sigmoid(x):
         """Calculate the sigmoid function"""
-        return 1 / (1 + np.exp(-x))
+        return 1 / (1 + np.exp(-4*x))
 
     @staticmethod
     def _sigmoidDerivative(x):
@@ -130,6 +136,11 @@ class SimpleLayer(object):
         self.weights += adjustment
         self.above.backPropagate(error_above)
 
+    def mutate(self):
+        x,y = self.weights.shape
+        connection = random.randint(0, x-1)
+        neuron = random.randint(0, y-1)
+        self.weights[connection, neuron] = 2 * random.random() - 1
 
 class InputLayer(SimpleLayer):
     def __init__(self, size):
@@ -142,6 +153,7 @@ class InputLayer(SimpleLayer):
         self.size = new_size
         self.inputs = 0
         self.values = np.zeros((new_size,1))
+        self.weights = np.zeros((new_size,1))
 
     def setValues(self, values):
         """Set the list of inputs as numpy array"""
@@ -153,6 +165,9 @@ class InputLayer(SimpleLayer):
         return self.values
 
     def backPropagate(self, error):
+        return
+
+    def mutate(self):
         return
 
 
