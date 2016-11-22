@@ -30,6 +30,8 @@ class Board:
                   "d": {"y": xrange(0,  5,  1), "x": xrange(3, -1, -1)},
                   "a": {"y": xrange(0,  5,  1), "x": xrange(1,  5,  1)}}
         moved = False
+        if direction not in bounds:
+            return moved
         for y in bounds[direction]["y"]:
             for x in bounds[direction]["x"]:
                 val = self._board[y][x]

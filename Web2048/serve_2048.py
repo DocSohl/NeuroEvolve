@@ -4,7 +4,7 @@ import SimpleHTTPServer, BaseHTTPServer, shutil, json
 
 class HTTPServer2048(BaseHTTPServer.HTTPServer):
     def __init__(self, board):
-        BaseHTTPServer.HTTPServer.__init__(self, ('', 80), Handler2048)
+        BaseHTTPServer.HTTPServer.__init__(self, ('', 3241), Handler2048)
         self.board = board
 
 class Handler2048(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -43,3 +43,8 @@ class Handler2048(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         pass
+
+
+if __name__ == "__main__":
+    httpd = HTTPServer2048(Board())
+    httpd.serve_forever()

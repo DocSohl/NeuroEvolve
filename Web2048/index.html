@@ -1,10 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>2048</title>
-</head>
+<meta charset="utf-8">
 <body>
-<table border="1" id="board"></table>
-</body>
-</html>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+var colormap = {0:'#fff7ec',2:'#fee8c8',4:'#fdd49e',8:'#fdbb84',16:'#fc8d59',32:'#ef6548','#d7301f','#b30000','#7f0000']
+
+var svg = d3.select("body").append("svg")
+    .attr("width", 500)
+    .attr("height", 500);
+
+var g = svg.selectAll("g")
+    .data([0,0,0,0,0,0,0,0,0,16,0,0,0,8,0,0,0,4,0,0,0,0,0,0,2])
+  .enter().append("g")
+    .attr("transform", function(d,i){return "translate(" + (i%5)*50 + "," + Math.floor(i/5)*50 + ")"});
+
+g.append("rect")
+    .attr("rx", 6)
+    .attr("ry", 6)
+    .attr("x", 1)
+    .attr("y", 1)
+    .attr("width", 48)
+    .attr("height", 48)
+    .style("fill", d3.scale.category20c());
+
+g.append("text")
+    .text(function(d){ return d; })
+    .attr("x",25)
+    .attr("y",25)
+    .attr("text-anchor","middle");
+
+//g.datum(function(d) {
+//  return {center: mouse.slice(), angle: 0};
+//});
+
+//svg.on("mousemove", function() {
+//  mouse = d3.mouse(this);
+//});
+
+//d3.timer(function() {
+//  count++;
+//  g.attr("transform", function(d, i) {
+//    d.center[0] += (mouse[0] - d.center[0]) / (i + 5);
+//    d.center[1] += (mouse[1] - d.center[1]) / (i + 5);
+//    d.angle += Math.sin((count + i) / 10) * 7;
+//    return "translate(" + d.center + ")rotate(" + d.angle + ")";
+//  });
+//});
+
+</script>
