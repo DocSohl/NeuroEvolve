@@ -3,12 +3,29 @@ import random, copy
 
 class Board:
     def __init__(self, repl=None):
-        self._board = [[0 for x in range(5)] for y in range(5)]
+        self._board = [[0 for x in range(4)] for y in range(4)]
         if repl and repl.__class__ == Board:
             self._board = copy.deepcopy(repl._board)
 
     def remaining(self):
         return sum([sum([x == 0 for x in y]) for y in self._board])
+
+    def valid(self):
+        if self.remaining() > 0:
+            return True
+        for x in range(4):
+            last = self._board[x][0]
+            for y in range(1,4):
+                current = self._board[x][y]
+                if current == last:
+                    return True
+        for y in range(4):
+            last = self._board[0][y]
+            for x in range(1,4):
+                current = self._board[x][y]
+                if current == last:
+                    return True
+        return False
 
     def spawn(self):
         options = self.remaining()
@@ -23,12 +40,12 @@ class Board:
 
 
     def move(self, direction):
-        if self.remaining() == 0:
+        if not self.valid():
             return False
-        bounds = {"s": {"y": xrange(3, -1, -1), "x": xrange(0,  5,  1)},
-                  "w": {"y": xrange(1,  5,  1), "x": xrange(0,  5,  1)},
-                  "d": {"y": xrange(0,  5,  1), "x": xrange(3, -1, -1)},
-                  "a": {"y": xrange(0,  5,  1), "x": xrange(1,  5,  1)}}
+        bounds = {"s": {"y": xrange(2, -1, -1), "x": xrange(0,  4,  1)},
+                  "w": {"y": xrange(1,  4,  1), "x": xrange(0,  4,  1)},
+                  "d": {"y": xrange(0,  4,  1), "x": xrange(2, -1, -1)},
+                  "a": {"y": xrange(0,  4,  1), "x": xrange(1,  4,  1)}}
         moved = False
         if direction not in bounds:
             return moved
@@ -36,9 +53,9 @@ class Board:
             for x in bounds[direction]["x"]:
                 val = self._board[y][x]
                 if val > 0:
-                    bounds2 = {"s": {"prop": xrange(y + 1,  5,  1)},
+                    bounds2 = {"s": {"prop": xrange(y + 1,  4,  1)},
                                "w": {"prop": xrange(y - 1, -1, -1)},
-                               "d": {"prop": xrange(x + 1,  5,  1)},
+                               "d": {"prop": xrange(x + 1,  4,  1)},
                                "a": {"prop": xrange(x - 1, -1, -1)}}
                     if direction == "s" or direction == "w":
                         y1 = y
@@ -76,7 +93,10 @@ class Board:
                                 break
         return moved
 
-
+    def step(self, direction):
+        if self.move(direction):
+            self.spawn()
+        # return self.valid()
 
     def display(self):
         for y in self._board:
