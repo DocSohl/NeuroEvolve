@@ -9,10 +9,12 @@ class Board:
         if repl and repl.__class__ == Board:
             self._board = self.boardcopy(repl._board)
 
-    def remaining(self, board=None):
-        if board is None:
-            board = self._board
+    @staticmethod
+    def _remaining(board):
         return sum([sum([x == 0 for x in y]) for y in board])
+
+    def remaining(self):
+        return self._remaining(self._board)
 
     def valid(self):
         if self.remaining() > 0:
@@ -33,10 +35,9 @@ class Board:
                 last = current
         return False
 
-    def spawn(self, board=None):
-        if board is None:
-            board = self._board
-        options = self.remaining(board=board)
+    @staticmethod
+    def _spawn(board):
+        options = Board._remaining(board)
         selection = random.randint(0,options-1)
         for y in board:
             for i,x in enumerate(y):
@@ -46,25 +47,17 @@ class Board:
                         y[i] = random.randint(1,2)
                         return
 
+    def spawn(self):
+        return self._spawn(self._board)
 
-    def move(self, direction, fake = False, starting = None):
-        if fake:
-            if starting:
-                board = self.boardcopy(starting)
-            else:
-                board = self.boardcopy(self._board)
-        else:
-            board = self._board
-            if not self.valid():
-                self.moved = False
-                return False
+    @staticmethod
+    def _move(direction, board):
         bounds = {"s": {"y": xrange(2, -1, -1), "x": xrange(0,  4,  1)},
                   "w": {"y": xrange(1,  4,  1), "x": xrange(0,  4,  1)},
                   "d": {"y": xrange(0,  4,  1), "x": xrange(2, -1, -1)},
                   "a": {"y": xrange(0,  4,  1), "x": xrange(1,  4,  1)}}
         if direction not in bounds:
-            self.moved = False
-            return False
+            return False, board
         moved = False
         for y in bounds[direction]["y"]:
             for x in bounds[direction]["x"]:
@@ -108,18 +101,20 @@ class Board:
                                 moved = True
                             else:
                                 break
-        if fake:
-            return board, moved
-        self.moved = moved
-        return moved
+        return moved, board
 
-    def boardcopy(self, board):
+    def move(self, direction):
+        if not self.valid():
+            return False
+        return self._move(direction, self._board)[0]
+
+    @staticmethod
+    def boardcopy(board):
         return [copy.deepcopy(i) for i in board]
 
     def step(self, direction):
         if self.move(direction):
             self.spawn()
-        # return self.valid()
 
     def display(self):
         for y in self._board:
@@ -138,29 +133,30 @@ class Board:
                 print val + (maxdigits - len(val)) * " ",
             print
 
-    def reward(self, board):
+    @staticmethod
+    def reward(board):
         total = 0
         for column in board:
             for p in column:
                 total += 2**p
         return total
 
-    def find_best(self, starting, level=0):
+    @staticmethod
+    def find_best(starting, level=0):
         best = 0
         direction = None
         for dir in ["w","a","s","d"]:
             avg = 0
             for i in range(5):
-                board, moved = self.move(dir,fake=True, starting=starting)
+                moved, board = Board._move(dir, Board.boardcopy(starting))
                 if not moved:
-                    r = 0
                     break
                 else:
-                    self.spawn(board=board)
+                    Board._spawn(board)
                     if level == 2:
-                        r = self.reward(board)
+                        r = Board.reward(board)
                     else:
-                        r,_ = self.find_best(board, level=level+1)
+                        r,_ = Board.find_best(board, level=level+1)
                     avg += r
             if i > 0:
                 avg /= i + 1
