@@ -42,6 +42,8 @@ class Handler2048(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_file("main.js")
         elif self.path == "/data.json":
             self.send_data()
+        elif self.path == "/d3.v3.min.js":
+            self.send_file("d3.v3.min.js")
         else:
             self.send_response(400, "BAD REQUEST")
             self.end_headers()
@@ -55,6 +57,13 @@ class Handler2048(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if "input" in body and body["input"] in ["w","a","s","d"]:
                 print "Got input: " + body["input"]
                 self.server.board.step(body["input"])
+            if "restart" in body:
+                print "Restarting"
+                self.server.board = Board()
+                self.server.board.spawn()
+            if "auto" in body:
+                print "Automatic move: ",
+                self.server.board.auto()
             self.send_data()
         except Exception, e:
             print e

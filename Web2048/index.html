@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <body>
-<script src="//d3js.org/d3.v3.min.js"></script>
+<!--<script src="//d3js.org/d3.v3.min.js"></script>-->
+<script src="d3.v3.min.js"></script>
 <script>
 
 var colormap = {0:'#fff7ec',2:'#fee8c8',4:'#fdd49e',8:'#fdbb84',16:'#fc8d59',32:'#ef6548',64:'#d7301f',128:'#b30000',256:'#7f0000'}
 
 var svg = d3.select("body").append("svg")
-    .attr("width", 800)
-    .attr("height", 800);
+    .attr("width", 200)
+    .attr("height", 200);
 
 var g = svg.selectAll("g").data([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]).enter().append("g")
         .attr("transform", function(d,i){return "translate(" + (i%4)*50 + "," + Math.floor(i/4)*50 + ")"});
@@ -71,6 +72,42 @@ d3.select("body")
             sendInput(key);
         }
     });
+d3.select("body").append("br");
+var auto = false;
+var restart = d3.select("body").append("button").html("Restart");
+restart.on("click", function() {
+    auto = false;
+    d3.text("restart")
+        .header("Content-Type", "application/json")
+        .post(
+            JSON.stringify({"restart": true}),
+            function(err, rawData){
+                var data = JSON.parse(rawData);
+                update(data);
+            }
+        );
+    });
+
+function run_auto(){
+    if (auto){
+        d3.text("auto")
+            .header("Content-Type", "application/json")
+            .post(
+                JSON.stringify({"auto": true}),
+                function(err, rawData){
+                    var data = JSON.parse(rawData);
+                    update(data);
+                    run_auto();
+                }
+            );
+    }
+}
+
+var automatic = d3.select("body").append("button").html("Automatic");
+automatic.on("click",function() {
+    auto = true;
+    run_auto();
+});
 </script>
 </body>
 </html>

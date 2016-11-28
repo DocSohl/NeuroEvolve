@@ -115,6 +115,20 @@ class Board:
                 print val + (maxdigits - len(val)) * " ",
             print
 
+    def auto(self):
+        p = random.random()
+        if p < 0.8:
+            direction = "s"
+        elif p < 0.9:
+            direction = "d"
+        elif p < 0.99:
+            direction = "a"
+        else:
+            direction = "w"
+        print direction
+        self.step(direction)
+
+
 if __name__ == "__main__":
     b = Board()
     last = True
