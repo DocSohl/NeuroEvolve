@@ -4,6 +4,8 @@ import random, copy
 class Board:
     def __init__(self, repl=None):
         self._board = [[0 for x in range(4)] for y in range(4)]
+        self.moved = False
+        self.last_moves = []
         if repl and repl.__class__ == Board:
             self._board = copy.deepcopy(repl._board)
 
@@ -19,12 +21,14 @@ class Board:
                 current = self._board[x][y]
                 if current == last:
                     return True
+                last = current
         for y in range(4):
             last = self._board[0][y]
             for x in range(1,4):
                 current = self._board[x][y]
                 if current == last:
                     return True
+                last = current
         return False
 
     def spawn(self):
@@ -91,6 +95,7 @@ class Board:
                                 moved = True
                             else:
                                 break
+        self.moved = moved
         return moved
 
     def step(self, direction):
@@ -115,16 +120,45 @@ class Board:
                 print val + (maxdigits - len(val)) * " ",
             print
 
+    def biggest_dir(self):
+        biggest = 0
+        dir = None
+        for x in range(4):
+            last = self._board[x][0]
+            for y in range(1,4):
+                current = self._board[x][y]
+                if current > 0:
+                    if current == last and current > biggest:
+                        biggest = current
+                        dir = "d"
+                    last = current
+        for y in range(4):
+            last = self._board[0][y]
+            for x in range(1,4):
+                current = self._board[x][y]
+                if current > 0:
+                    if current == last and current > biggest:
+                        biggest = current
+                        dir = "s"
+                    last = current
+        return dir
+
     def auto(self):
-        p = random.random()
-        if p < 0.8:
-            direction = "s"
-        elif p < 0.9:
-            direction = "d"
-        elif p < 0.99:
-            direction = "a"
+        dir = self.biggest_dir()
+        if dir:
+            direction = dir
         else:
-            direction = "w"
+            if self.moved or len(self.last_moves) == 0:
+                direction = "s"
+            elif self.last_moves[-1] == "s":
+                direction = "d"
+            elif "s" in self.last_moves and "d" in self.last_moves:
+                direction = "a"
+            else:
+                direction = "w"
+        self.last_moves.append(direction)
+        if len(self.last_moves) > 2:
+            self.last_moves.pop(0)
         print direction
         self.step(direction)
 

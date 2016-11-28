@@ -105,8 +105,13 @@ function run_auto(){
 
 var automatic = d3.select("body").append("button").html("Automatic");
 automatic.on("click",function() {
-    auto = true;
-    run_auto();
+    if (auto) {
+        auto = false;
+    }
+    else {
+        auto = true;
+        run_auto();
+    }
 });
 </script>
 </body>
