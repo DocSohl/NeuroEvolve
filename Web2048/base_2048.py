@@ -7,10 +7,12 @@ class Board:
         self.moved = False
         self.last_moves = []
         if repl and repl.__class__ == Board:
-            self._board = copy.deepcopy(repl._board)
+            self._board = self.boardcopy(repl._board)
 
-    def remaining(self):
-        return sum([sum([x == 0 for x in y]) for y in self._board])
+    def remaining(self, board=None):
+        if board is None:
+            board = self._board
+        return sum([sum([x == 0 for x in y]) for y in board])
 
     def valid(self):
         if self.remaining() > 0:
@@ -31,10 +33,12 @@ class Board:
                 last = current
         return False
 
-    def spawn(self):
-        options = self.remaining()
+    def spawn(self, board=None):
+        if board is None:
+            board = self._board
+        options = self.remaining(board=board)
         selection = random.randint(0,options-1)
-        for y in self._board:
+        for y in board:
             for i,x in enumerate(y):
                 if x == 0:
                     selection -= 1
@@ -43,19 +47,28 @@ class Board:
                         return
 
 
-    def move(self, direction):
-        if not self.valid():
-            return False
+    def move(self, direction, fake = False, starting = None):
+        if fake:
+            if starting:
+                board = self.boardcopy(starting)
+            else:
+                board = self.boardcopy(self._board)
+        else:
+            board = self._board
+            if not self.valid():
+                self.moved = False
+                return False
         bounds = {"s": {"y": xrange(2, -1, -1), "x": xrange(0,  4,  1)},
                   "w": {"y": xrange(1,  4,  1), "x": xrange(0,  4,  1)},
                   "d": {"y": xrange(0,  4,  1), "x": xrange(2, -1, -1)},
                   "a": {"y": xrange(0,  4,  1), "x": xrange(1,  4,  1)}}
-        moved = False
         if direction not in bounds:
-            return moved
+            self.moved = False
+            return False
+        moved = False
         for y in bounds[direction]["y"]:
             for x in bounds[direction]["x"]:
-                val = self._board[y][x]
+                val = board[y][x]
                 if val > 0:
                     bounds2 = {"s": {"prop": xrange(y + 1,  4,  1)},
                                "w": {"prop": xrange(y - 1, -1, -1)},
@@ -64,16 +77,16 @@ class Board:
                     if direction == "s" or direction == "w":
                         y1 = y
                         for y2 in bounds2[direction]["prop"]:
-                            val2 = self._board[y2][x]
+                            val2 = board[y2][x]
                             if val2 == val:
                                 val += 1
-                                self._board[y1][x] = 0
-                                self._board[y2][x] = val
+                                board[y1][x] = 0
+                                board[y2][x] = val
                                 moved = True
                                 break
                             if val2 == 0:
-                                self._board[y1][x] = 0
-                                self._board[y2][x] = val
+                                board[y1][x] = 0
+                                board[y2][x] = val
                                 y1 = y2
                                 moved = True
                             else:
@@ -81,22 +94,27 @@ class Board:
                     else:
                         x1 = x
                         for x2 in bounds2[direction]["prop"]:
-                            val2 = self._board[y][x2]
+                            val2 = board[y][x2]
                             if val2 == val:
                                 val += 1
-                                self._board[y][x1] = 0
-                                self._board[y][x2] = val
+                                board[y][x1] = 0
+                                board[y][x2] = val
                                 moved = True
                                 break
                             if val2 == 0:
-                                self._board[y][x1] = 0
-                                self._board[y][x2] = val
+                                board[y][x1] = 0
+                                board[y][x2] = val
                                 x1 = x2
                                 moved = True
                             else:
                                 break
+        if fake:
+            return board, moved
         self.moved = moved
         return moved
+
+    def boardcopy(self, board):
+        return [copy.deepcopy(i) for i in board]
 
     def step(self, direction):
         if self.move(direction):
@@ -120,42 +138,43 @@ class Board:
                 print val + (maxdigits - len(val)) * " ",
             print
 
-    def biggest_dir(self):
-        biggest = 0
-        dir = None
-        for x in range(4):
-            last = self._board[x][0]
-            for y in range(1,4):
-                current = self._board[x][y]
-                if current > 0:
-                    if current == last and current > biggest:
-                        biggest = current
-                        dir = "d"
-                    last = current
-        for y in range(4):
-            last = self._board[0][y]
-            for x in range(1,4):
-                current = self._board[x][y]
-                if current > 0:
-                    if current == last and current > biggest:
-                        biggest = current
-                        dir = "s"
-                    last = current
-        return dir
+    def reward(self, board):
+        total = 0
+        for column in board:
+            for p in column:
+                total += 2**p
+        return total
+
+    def find_best(self, starting, level=0):
+        best = 0
+        direction = None
+        for dir in ["w","a","s","d"]:
+            avg = 0
+            for i in range(5):
+                board, moved = self.move(dir,fake=True, starting=starting)
+                if not moved:
+                    r = 0
+                    break
+                else:
+                    self.spawn(board=board)
+                    if level == 2:
+                        r = self.reward(board)
+                    else:
+                        r,_ = self.find_best(board, level=level+1)
+                    avg += r
+            if i > 0:
+                avg /= i + 1
+            if avg >= best:
+                best = avg
+                direction = dir
+        return best, direction
 
     def auto(self):
-        dir = self.biggest_dir()
-        if dir:
-            direction = dir
-        else:
-            if self.moved or len(self.last_moves) == 0:
-                direction = "s"
-            elif self.last_moves[-1] == "s":
-                direction = "d"
-            elif "s" in self.last_moves and "d" in self.last_moves:
-                direction = "a"
-            else:
-                direction = "w"
+        _, direction = self.find_best(self._board)
+
+        if not self.moved and len(self.last_moves) == 2 and self.last_moves[0] == self.last_moves[1]:
+            direction = random.choice(["w","a","s","d"])
+
         self.last_moves.append(direction)
         if len(self.last_moves) > 2:
             self.last_moves.pop(0)
