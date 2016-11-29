@@ -1,4 +1,27 @@
-import random, copy
+import random, copy, multiprocessing
+
+
+def simulate(paramqueue, resultqueue):
+    try:
+        while 1:
+            startboard, direction, history = paramqueue.get()
+            moved, board = Board._move(direction, startboard)
+            if moved:
+                Board._spawn(board)
+                history.append(None)
+            else:
+                history.append(direction)
+            if len(history) >= 4:
+                if None in history:
+                    reward = 0
+                else:
+                    reward = Board.reward(board)
+                resultqueue.put((reward,history))
+            else:
+                for dir in ["w", "a", "s", "d"]:
+                    paramqueue.put((board, dir, history))
+    except KeyboardInterrupt:
+        pass
 
 
 class Board:
@@ -6,6 +29,11 @@ class Board:
         self._board = [[0 for x in range(4)] for y in range(4)]
         self.moved = False
         self.last_moves = []
+        self.paramqueue = multiprocessing.Queue()
+        self.resultqueue = multiprocessing.Queue()
+        self.ps = [multiprocessing.Process(target=simulate, args=(self.paramqueue,self.resultqueue,)) for i in range(20)]
+        for p in self.ps:
+            p.start()
         if repl and repl.__class__ == Board:
             self._board = self.boardcopy(repl._board)
 
@@ -141,32 +169,21 @@ class Board:
                 total += 2**p
         return total
 
-    @staticmethod
-    def find_best(starting, level=0):
-        best = 0
-        direction = None
-        for dir in ["w","a","s","d"]:
-            avg = 0
-            for i in range(5):
-                moved, board = Board._move(dir, Board.boardcopy(starting))
-                if not moved:
-                    break
-                else:
-                    Board._spawn(board)
-                    if level == 2:
-                        r = Board.reward(board)
-                    else:
-                        r,_ = Board.find_best(board, level=level+1)
-                    avg += r
-            if i > 0:
-                avg /= i + 1
-            if avg >= best:
-                best = avg
-                direction = dir
-        return best, direction
+
 
     def auto(self):
-        _, direction = self.find_best(self._board)
+        for dir in ["w","a","s","d"]:
+            self.paramqueue.put((self._board,dir,[]))
+
+        best = 0
+        besthistory = None
+        for i in range(256):
+            r, history = self.resultqueue.get()
+            # print "Got reward #%s with reward %s" % (i, r)
+            if r >= best:
+                best = r
+                besthistory = history
+        direction = besthistory[0]
 
         if not self.moved and len(self.last_moves) == 2 and self.last_moves[0] == self.last_moves[1]:
             direction = random.choice(["w","a","s","d"])
